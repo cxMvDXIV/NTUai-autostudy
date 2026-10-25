@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>刷课 · 南通大学 AIGC 课程平台</title>
+<style>
+  :root {
+    --bg: #f5f6f7;
+    --panel: #ffffff;
+    --line: #d8dce1;
+    --ink: #1b1f24;
+    --muted: #5c666f;
+    --accent: #137a5c;
+    --accent-soft: rgba(19, 122, 92, 0.14);
+    --danger: #b02a1f;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.55 system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+  }
+  .topbar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .mark {
+    width: 34px; height: 34px; flex: 0 0 34px;
+    border-radius: 7px;
+    background: var(--accent);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px;
+  }
+  .brand h1 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: 0; }
+  .brand p { margin: 1px 0 0; font-size: 12px; color: var(--muted); }
+  .who {
+    font-size: 12px; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 5px 11px; white-space: nowrap;
+  }
+  .who.on { color: var(--accent); border-color: var(--accent-soft); background: var(--accent-soft); }
+  main { max-width: 1000px; margin: 0 auto; padding: 0 20px 40px; }
+  section { padding: 20px 0; border-bottom: 1px solid var(--line); }
+  section:last-child { border-bottom: 0; }
+  h2 { margin: 0 0 12px; font-size: 13px; font-weight: 650; color: var(--muted); letter-spacing: 0; }
+  .grid {
+    display: grid; gap: 12px;
+    grid-template-columns: minmax(0, 220px) minmax(0, 220px) auto;
+    align-items: end;
+  }
+  label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); }
+  input[type=text], input[type=password], input[type=number] {
+    height: 34px; padding: 0 10px; font-size: 14px; color: var(--ink);
+    background: #fff; border: 1px solid var(--line); border-radius: 6px; font-family: inherit;
+  }
+  input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .actions { display: flex; gap: 8px; }
+  .btn {
+    height: 34px; padding: 0 14px; font-size: 14px; font-family: inherit;
+    color: var(--ink); background: #fff; border: 1px solid var(--line);
+    border-radius: 6px; cursor: pointer;
+  }
+  .btn:hover:not(:disabled) { border-color: #b9c0c7; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover:not(:disabled) { background: #0f6a50; border-color: #0f6a50; }
+  .btn.danger { color: var(--danger); border-color: rgba(176, 42, 31, .35); }
+  .btn.tiny { height: 28px; padding: 0 10px; font-size: 12px; }
+  .msg { margin: 10px 0 0; font-size: 12px; color: var(--muted); min-height: 18px; }
+  .msg.err { color: var(--danger); }
+  .msg.ok { color: var(--accent); }
+  .panelhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .panelhead h2 { margin: 0; }
+  .courses { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 8px; }
+  .course {
+    display: grid; grid-template-columns: 18px minmax(0, 1fr) auto auto;
+    align-items: center; gap: 12px;
+    min-height: 44px; padding: 8px 12px;
+    background: #fff; border: 1px solid var(--line); border-radius: 7px;
+  }
+  .course input { margin: 0; accent-color: var(--accent); }
+  .cname { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cid { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .cstat { font-size: 12px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
+  .cstat.done { color: var(--accent); }
+  .opts {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    align-items: end;
+  }
+  .check { flex-direction: row; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); }
+  .check input { accent-color: var(--accent); }
+  .runbar { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+  .status { font-size: 12px; color: var(--muted); }
+  .log {
+    margin: 0; padding: 14px 16px;
+    height: 340px; overflow: auto;
+    background: #fbfcfd; border: 1px solid var(--line); border-radius: 7px;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.6;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .log .sum { color: var(--accent); }
+  .log .bad { color: var(--danger); }
+  .hint { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+  a { color: var(--accent); }
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+    main { padding: 0 14px 32px; }
+    .topbar-inner { padding: 12px 14px; }
+    .course { grid-template-columns: 18px minmax(0, 1fr); row-gap: 4px; }
+    .cname { grid-column: 2; }
+    .cid { display: none; }
+    .cstat { grid-column: 1 / -1; white-space: normal; font-size: 11.5px; text-align: right; }
+    .who { max-width: 44%; overflow: hidden; text-overflow: ellipsis; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="mark">刷</span>
+      <div>
+        <h1>南通大学 AIGC 课程平台刷课</h1>
+        <p>接口模式 · 免安装 · 双击打开就能用</p>
+      </div>
+    </div>
+    <div class="who" id="who">未登录</div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>登录</h2>
+    <form class="grid" id="loginForm">
+      <label>账号<input id="account" type="text" autocomplete="username" inputmode="numeric" placeholder="手机号"></label>
+      <label>密码<input id="password" type="password" autocomplete="current-password" placeholder="登录密码"></label>
+      <div class="actions">
+        <button class="btn primary" id="loginBtn" type="submit">登录</button>
+        <button class="btn" id="clearBtn" type="button">换账号</button>
+      </div>
+    </form>
+    <p class="msg" id="loginMsg"></p>
+  </section>
+
+  <section id="coursePanel" hidden>
+    <div class="panelhead">
+      <h2>课程与刷法</h2>
+      <div class="actions">
+        <button class="btn tiny" id="allCourses" type="button">全选</button>
+        <button class="btn tiny" id="noneCourses" type="button">全不选</button>
+        <button class="btn tiny" id="refreshCourses" type="button">刷新</button>
+      </div>
+    </div>
+    <ul class="courses" id="courseList"></ul>
+    <div class="opts">
+      <label class="check"><input type="checkbox" id="elective" checked> 连选修课一起刷</label>
+      <label>每节分几次上报<input id="steps" type="number" min="1" max="30" value="6"></label>
+      <label>每次间隔（秒）<input id="gap" type="number" min="0" max="30" value="2"></label>
+      <label>每门课最多刷几节<input id="limit" type="number" min="0" max="999" value="0"></label>
+      <label>进度到百分之几停<input id="stopAt" type="number" min="0" max="200" value="0"></label>
+    </div>
+    <div class="runbar">
+      <button class="btn primary" id="startBtn" type="button">开始刷课</button>
+      <button class="btn danger" id="stopBtn" type="button" disabled>停止</button>
+      <span class="status" id="status">待命</span>
+    </div>
+    <p class="hint">这个页面一登录就会把你浏览器里课程平台的登录顶掉（平台只保留最后一次登录），网页端提示重新登录是正常的。想边刷边看网页，就用 <a id="openSite" href="#" target="_blank" rel="noreferrer">课程平台</a> 重新登录一次。</p>
+  </section>
+
+  <section>
+    <div class="panelhead">
+      <h2>输出</h2>
+      <button class="btn tiny" id="clearLog" type="button">清空</button>
+    </div>
+    <pre class="log" id="log"></pre>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+const API = "https://xdplus.com.cn/html5/new_student_nantong_university_course_front/";
+const SITE = "https://xdplus.com.cn/aigc/nantong_university/new_student_nantong_university/#/courses/primary/21";
+const K_TOKEN = "shua_token", K_ACCOUNT = "shua_account", K_PASSWORD = "shua_password";
+
+const $ = (id) => document.getElementById(id);
+const logEl = $("log");
+let token = "";
+let uid = null;
+let userName = "";
+let running = false;
+let stopFlag = false;
+let courses = [];
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const fmtMin = (m) => {
+  const t = Math.max(0, Math.round(Number(m) || 0));
+  return Math.floor(t / 60) + "小时" + String(t % 60).padStart(2, "0") + "分";
+};
+const fmtPct = (v) => (v === null || v === undefined || v === "" ? String(v)
+  : String(Number(v).toFixed(2)).replace(/\.?0+$/, ""));
+
+function log(text, cls) {
+  const span = document.createElement("span");
+  if (cls) span.className = cls;
+  span.textContent = text + "\n";
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setStatus(text) { $("status").textContent = text; }
+function setMsg(el, text, cls) { el.textContent = text || ""; el.className = "msg" + (cls ? " " + cls : ""); }
+
+function setWho() {
+  const who = $("who");
+  if (uid) {
+    who.textContent = (userName || "已登录") + " · user_id=" + uid;
+    who.classList.add("on");
+  } else {
+    who.textContent = "未登录";
+    who.classList.remove("on");
+  }
+}
+
+async function call(path, fields, useToken) {
+  const fd = new FormData();
+  Object.entries(fields || {}).forEach(([k, v]) => {
+    if (v !== null && v !== undefined) fd.append(k, String(v));
+  });
+  const headers = {};
+  const t = useToken === undefined ? token : useToken;
+  if (t) headers.token = t;
+  let resp;
+  try {
+    resp = await fetch(API + path, { method: "POST", headers, body: fd });
+  } catch (e) {
+    throw new Error("网络请求失败：" + e.message + "（检查网络，或这个页面是不是用 file:// 打开的）");
+  }
+  let out;
+  try {
+    out = await resp.json();
+  } catch (e) {
+    throw new Error("接口没返回 JSON（" + path + "），HTTP " + resp.status);
+  }
+  if (out.code === 401 || out.code === 2007) {
+    const err = new Error("登录已过期");
+    err.expired = true;
+    throw err;
+  }
+  if (out.code !== 200) throw new Error((out.msg || "接口报错") + "（" + path + "）");
+  return out.data || {};
+}
+
+function saveLogin() {
+  try {
+    localStorage.setItem(K_TOKEN, token);
+    localStorage.setItem(K_ACCOUNT, $("account").value.trim());
+    localStorage.setItem(K_PASSWORD, $("password").value);
+  } catch (e) { /* 隐私模式下存不下，不影响刷 */ }
+}
+
+function loadSaved() {
+  try {
+    if (!$("account").value) $("account").value = localStorage.getItem(K_ACCOUNT) || "";
+    if (!$("password").value) $("password").value = localStorage.getItem(K_PASSWORD) || "";
+    return localStorage.getItem(K_TOKEN) || "";
+  } catch (e) { return ""; }
+}
+
+function adopt(d, useToken) {
+  token = useToken || token;
+  uid = d.user_id || d.id || null;
+  userName = d.user_name || "";
+  try { if (uid) localStorage.setItem("shua_user_id", String(uid)); } catch (e) {}
+  setWho();
+}
+
+async function login(force) {
+  const account = $("account").value.trim();
+  const password = $("password").value;
+  if (!account || !password) throw new Error("先把账号和密码填上");
+  if (!force) {
+    const savedToken = loadSaved();
+    const savedUid = Number(localStorage.getItem("shua_user_id") || 0);
+    if (savedToken && savedUid) {
+      try {
+        const d = await call("getUserDetail", { user_id: savedUid }, savedToken);
+        if (d && (d.user_id || d.id)) {
+          adopt(d, savedToken);
+          return "reused";
+        }
+      } catch (e) {
+        if (!e.expired) throw e;
+      }
+    }
+  }
+  token = "";
+  const data = await call("login", { account, password }, "");
+  if (!data.token || !data.user_id) throw new Error("登录响应里没有 token/user_id");
+  adopt(data, data.token);
+  saveLogin();
+  return "fresh";
+}
+
+async function loadCourses() {
+  const data = await call("courseList?user_id=" + uid + "&page=1&limit=50", {});
+  courses = (data.list || []).map((c) => ({
+    id: Number(c.id),
+    name: c.course_name || ("course_id=" + c.id),
+    type: c.course_type || "",
+  }));
+  renderCourses();
+  return courses;
+}
+
+function renderCourses() {
+  const ul = $("courseList");
+  ul.innerHTML = "";
+  courses.forEach((c) => {
+    const li = document.createElement("li");
+    li.className = "course";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = true;
+    cb.dataset.cid = String(c.id);
+    const name = document.createElement("div");
+    name.className = "cname";
+    name.textContent = c.name;
+    name.title = c.name;
+    const cid = document.createElement("span");
+    cid.className = "cid";
+    cid.textContent = "id=" + c.id;
+    const stat = document.createElement("span");
+    stat.className = "cstat";
+    stat.dataset.cid = String(c.id);
+    stat.textContent = "未读取";
+    li.append(cb, name, cid, stat);
+    ul.appendChild(li);
+  });
+}
+
+function courseStats(items, electiveOn) {
+  const t = items.filter((x) => x.need_min > 0 && (electiveOn || !x.elective));
+  return {
+    sections: t.length,
+    finished: t.filter((x) => x.done_min >= x.need_min).length,
+    minutes: t.reduce((a, x) => a + Math.min(x.done_min, x.need_min), 0),
+    required: t.reduce((a, x) => a + x.need_min, 0),
+  };
+}
+
+function flatten(detail) {
+  const course = detail.course || {};
+  const items = [];
+  (detail.chapters || []).forEach((ch) => {
+    (ch.periods || []).forEach((p) => {
+      items.push({
+        chapter_id: ch.id,
+        period_id: p.id,
+        period_name: p.period_name || "",
+        need_min: Number(p.period_hour) || 0,
+        done_min: Number(p.class_schedule) || 0,
+        elective: Number(p.period_type || 0) === 1,
+        locked: p.is_play === false,
+      });
+    });
+  });
+  return { course, items };
+}
+
+function paintCourse(cid, items, electiveOn, pct) {
+  const el = document.querySelector('.cstat[data-cid="' + cid + '"]');
+  if (!el) return;
+  const s = courseStats(items, electiveOn);
+  const done = s.sections && s.finished >= s.sections;
+  el.textContent = "已刷 " + s.finished + "/" + s.sections + " 节 · " + fmtMin(s.minutes)
+    + "/" + fmtMin(s.required) + " · " + fmtPct(pct) + "%";
+  el.classList.toggle("done", !!done);
+}
+
+async function refreshStats(cid, electiveOn) {
+  const d = flatten(await call("courseDetail", { user_id: uid, course_id: cid }));
+  paintCourse(cid, d.items, electiveOn, d.course.total_progress);
+}
+
+async function runCourse(cid, opt, rows) {
+  let detail = flatten(await call("courseDetail", { user_id: uid, course_id: cid }));
+  let course = detail.course, items = detail.items;
+  const name = course.course_name || ("course_id=" + cid);
+  log("\n---- " + name + " (course_id=" + cid + ") ----");
+  const before = courseStats(items, opt.elective);
+  const beforePct = course.total_progress;
+  paintCourse(cid, items, opt.elective, beforePct);
+  const startAt = Date.now();
+  let played = 0;
+
+  for (let round = 1; round <= 8 && !stopFlag; round++) {
+    let pending = items.filter((x) => x.need_min > 0 && (opt.elective || !x.elective)
+      && x.done_min < x.need_min);
+    if (!pending.length) break;
+    let moved = false;
+    for (const x of pending) {
+      if (stopFlag) break;
+      if (opt.limit && played >= opt.limit) break;
+      const fresh = flatten(await call("courseDetail", { user_id: uid, course_id: cid }));
+      items = fresh.items;
+      course = fresh.course;
+      const cur = items.find((f) => f.period_id === x.period_id);
+      if (!cur) continue;
+      Object.assign(x, cur);
+      if (x.need_min <= 0 || x.done_min >= x.need_min) continue;
+      if (x.locked && !x.elective) {
+        log("  跳过 " + x.period_id + " " + x.period_name + "：还锁着，等前面的课时解锁");
+        continue;
+      }
+      moved = true;
+      setStatus("正在刷 " + name + " · " + x.period_name);
+      const target = x.need_min;
+      const step = Math.max(1, target / Math.max(1, opt.steps));
+      let report = Math.min(target, Math.max(x.done_min + 1, step));
+      let stored = x.done_min;
+      for (;;) {
+        const out = await call("submitStudyDuration", {
+          user_id: uid, course_id: cid, chapter_id: x.chapter_id, period_id: x.period_id,
+          class_id: course.class_id, study_duration: Math.round(report * 60),
+          period_type: x.elective ? 1 : 0,
+        });
+        stored = Number((out.data || {}).study_duration || 0);
+        if (report >= target || stored >= target) break;
+        if (opt.gapMs) await sleep(opt.gapMs);
+        if (stopFlag) break;
+        report = Math.min(target, report + step);
+      }
+      x.done_min = stored;
+      played++;
+      const after = flatten(await call("courseDetail", { user_id: uid, course_id: cid }));
+      items = after.items;
+      course = after.course;
+      paintCourse(cid, items, opt.elective, course.total_progress);
+      log("  [" + round + "] " + x.period_id + " " + x.period_name + " -> "
+        + Math.round(stored) + "/" + Math.round(target) + "分  课程进度 "
+        + fmtPct(course.total_progress) + "%");
+      if (opt.stopAt && Number(course.total_progress || 0) >= opt.stopAt) { round = 99; break; }
+      if (opt.gapMs) await sleep(opt.gapMs);
+    }
+    if (!moved) { log("  没有可上报的课时了（可能都被锁定），停止。"); break; }
+  }
+
+  const fin = flatten(await call("courseDetail", { user_id: uid, course_id: cid }));
+  const after = courseStats(fin.items, opt.elective);
+  paintCourse(cid, fin.items, opt.elective, fin.course.total_progress);
+  rows.push({
+    name, sections: after.sections, before, after,
+    gainedSections: Math.max(0, after.finished - before.finished),
+    gainedMin: Math.max(0, after.minutes - before.minutes),
+    elapsed: (Date.now() - startAt) / 1000,
+    pctBefore: beforePct, pctAfter: fin.course.total_progress,
+  });
+  if (opt.stopAt && Number(fin.course.total_progress || 0) >= opt.stopAt) {
+    log("\n整体已到目标进度 " + opt.stopAt + "%，后面的课不刷了。");
+    return false;
+  }
+  return true;
+}
+
+function printSummary(rows, t0) {
+  log("\n================================================");
+  log("  本次刷课结果", "sum");
+  log("================================================", "sum");
+  let touched = 0, movedCourses = 0, totSections = 0, totMin = 0, full = 0;
+  rows.forEach((r) => {
+    touched++;
+    log(r.name);
+    if (!r.gainedSections && !r.gainedMin) {
+      log(r.sections && r.after.finished >= r.sections
+        ? "  没有要刷的课时，" + r.sections + " 节已经全部刷满"
+        : "  这一轮没有推进（课时可能还锁着，或已到本次上限）");
+    } else {
+      movedCourses++;
+      log("  刷了 " + r.gainedSections + " 节，新增 " + fmtMin(r.gainedMin)
+        + "，用时 " + (r.elapsed / 60).toFixed(1) + " 分钟");
+    }
+    log("  完成节数 " + r.before.finished + "/" + r.sections + " -> " + r.after.finished + "/" + r.sections
+      + "，已学 " + fmtMin(r.before.minutes) + " -> " + fmtMin(r.after.minutes)
+      + "（本次范围要求 " + fmtMin(r.after.required) + "）");
+    log("  平台显示进度 " + fmtPct(r.pctBefore) + "% -> " + fmtPct(r.pctAfter) + "%");
+    totSections += r.gainedSections;
+    totMin += r.gainedMin;
+    if (r.sections && r.after.finished >= r.sections) full++;
+  });
+  log("------------------------------------------------");
+  log("合计：刷了 " + movedCourses + " 门课，" + totSections + " 节，新增 " + fmtMin(totMin)
+    + "，总用时 " + ((Date.now() - t0) / 60000).toFixed(1) + " 分钟", "sum");
+  log("      本次共处理 " + touched + " 门课，其中 " + full + " 门课时已全部刷满", "sum");
+}
+
+async function start() {
+  if (running) return;
+  const chosen = Array.from(document.querySelectorAll('#courseList input[type=checkbox]'))
+    .filter((cb) => cb.checked).map((cb) => Number(cb.dataset.cid));
+  if (!chosen.length) { log("先勾上要刷的课程。", "bad"); return; }
+  const opt = {
+    elective: $("elective").checked,
+    steps: Math.max(1, Number($("steps").value) || 6),
+    gapMs: Math.max(0, Number($("gap").value) || 0) * 1000,
+    limit: Math.max(0, Number($("limit").value) || 0),
+    stopAt: Math.max(0, Number($("stopAt").value) || 0),
+  };
+  running = true;
+  stopFlag = false;
+  $("startBtn").disabled = true;
+  $("stopBtn").disabled = false;
+  $("loginBtn").disabled = true;
+  log("开始：" + chosen.length + " 门课，" + (opt.elective ? "含选修" : "只刷必修")
+    + "，每节分 " + opt.steps + " 次上报，间隔 " + Math.round(opt.gapMs / 1000) + " 秒"
+    + (opt.limit ? "，每门课最多 " + opt.limit + " 节" : "")
+    + (opt.stopAt ? "，进度到 " + opt.stopAt + "% 停" : ""));
+  const t0 = Date.now();
+  const rows = [];
+  try {
+    for (const cid of chosen) {
+      if (stopFlag) break;
+      const keepGoing = await runCourse(cid, opt, rows);
+      if (!keepGoing) break;
+    }
+    if (rows.length) printSummary(rows, t0);
+    setStatus(stopFlag ? "已手动停止" : "刷完了");
+  } catch (e) {
+    log("出错了：" + e.message, "bad");
+    if (e.expired) setMsg($("loginMsg"), "登录过期了，重新登录一次再刷。", "err");
+    setStatus("出错了");
+  } finally {
+    running = false;
+    $("startBtn").disabled = false;
+    $("stopBtn").disabled = true;
+    $("loginBtn").disabled = false;
+  }
+}
+
+$("loginForm").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const btn = $("loginBtn");
+  btn.disabled = true;
+  setMsg($("loginMsg"), "登录中…");
+  try {
+    const how = await login(true);
+    setMsg($("loginMsg"), how === "reused"
+      ? "已沿用这台电脑存过的登录态：" + (userName || uid)
+      : "已登录：" + (userName || uid) + " (user_id=" + uid + ")", "ok");
+    $("coursePanel").hidden = false;
+    $("openSite").href = SITE;
+    setStatus("读取课程…");
+    await loadCourses();
+    const electiveOn = $("elective").checked;
+    for (const c of courses) {
+      try { await refreshStats(c.id, electiveOn); } catch (e) { /* 下一门再来 */ }
+    }
+    setStatus("待命");
+    log("已登录：" + (userName || "") + " (user_id=" + uid + ")，读到 " + courses.length + " 门课");
+  } catch (e) {
+    setMsg($("loginMsg"), "登录失败：" + e.message, "err");
+    log("登录失败：" + e.message, "bad");
+    setStatus("待命");
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$("clearBtn").addEventListener("click", () => {
+  try {
+    localStorage.removeItem(K_TOKEN);
+    localStorage.removeItem("shua_user_id");
+  } catch (e) {}
+  token = "";
+  uid = null;
+  userName = "";
+  setWho();
+  $("coursePanel").hidden = true;
+  $("password").value = "";
+  $("account").focus();
+  setMsg($("loginMsg"), "已清掉这台电脑存的登录，填别人的账号密码再登录。");
+});
+
+$("startBtn").addEventListener("click", start);
+$("stopBtn").addEventListener("click", () => { stopFlag = true; setStatus("正在停止…"); });
+$("clearLog").addEventListener("click", () => { logEl.textContent = ""; });
+$("allCourses").addEventListener("click", () => {
+  document.querySelectorAll('#courseList input[type=checkbox]').forEach((cb) => { cb.checked = true; });
+});
+$("noneCourses").addEventListener("click", () => {
+  document.querySelectorAll('#courseList input[type=checkbox]').forEach((cb) => { cb.checked = false; });
+});
+$("refreshCourses").addEventListener("click", async () => {
+  if (!uid || running) return;
+  try {
+    await loadCourses();
+    const electiveOn = $("elective").checked;
+    for (const c of courses) await refreshStats(c.id, electiveOn);
+    log("已刷新各门课的完成情况");
+  } catch (e) { log("刷新失败：" + e.message, "bad"); }
+});
+$("elective").addEventListener("change", async () => {
+  if (!uid || running) return;
+  const electiveOn = $("elective").checked;
+  for (const c of courses) {
+    try { await refreshStats(c.id, electiveOn); } catch (e) { /* 下一门再来 */ }
+  }
+});
+
+(async function boot() {
+  $("openSite").href = SITE;
+  const saved = loadSaved();
+  if (!saved) { $("account").focus(); return; }
+  token = saved;
+  setStatus("检测到这台电脑存过的登录，正在试着沿用…");
+  setMsg($("loginMsg"), "正在沿用这台电脑存过的登录…");
+  try {
+    await login(false);
+    $("coursePanel").hidden = false;
+    await loadCourses();
+    const electiveOn = $("elective").checked;
+    for (const c of courses) {
+      try { await refreshStats(c.id, electiveOn); } catch (e) { /* 下一门再来 */ }
+    }
+    setMsg($("loginMsg"), "已沿用这台电脑存过的登录：" + (userName || uid), "ok");
+    log("已沿用登录：" + (userName || "") + " (user_id=" + uid + ")，读到 " + courses.length + " 门课");
+  } catch (e) {
+    token = "";
+    uid = null;
+    setWho();
+    setMsg($("loginMsg"), "存过的登录不能用了，重新输一次密码登录。", "err");
+    $("password").value = "";
+  }
+  setStatus("待命");
+})();
+</script>
+
+</body>
+</html>

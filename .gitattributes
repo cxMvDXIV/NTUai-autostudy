@@ -1,0 +1,12 @@
+# 默认按文本处理，仓库里统一存 LF
+* text=auto eol=lf
+
+# bat 必须保持 CRLF：LF 结尾的 bat 在 cmd 里 goto/pause 会出怪事，
+# 用 -text 让 git 两个方向都不转换，下载 ZIP 的人拿到的也是 CRLF
+*.bat -text
+*.cmd -text
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary

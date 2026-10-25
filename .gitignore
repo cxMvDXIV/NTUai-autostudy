@@ -1,0 +1,19 @@
+# 运行时会生成的登录态：里面有账号、明文密码和 token，别提交
+刷课状态.json
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 播放模式的浏览器配置目录：整个 Chrome 用户数据，50MB 以上，还带 cookie
+.chrome-play/
+
+# 本地调试用的探针脚本、抓下来的前端 JS 包、测试截图，不进仓库
+.chk/
+
+# 系统和编辑器垃圾
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.tmp
